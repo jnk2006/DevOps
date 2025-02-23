@@ -1,4 +1,3 @@
 # Server_Performance_Stats
-Goal of this project is to write a script to analyse server performance stats.
 
-Project Page URL: https://roadmap.sh/projects/server-stats
+https://roadmap.sh/projects/server-stats
