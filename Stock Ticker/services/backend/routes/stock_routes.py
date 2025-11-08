@@ -8,9 +8,9 @@ stock_bp = Blueprint('stock', __name__)
 
 def stock_info(ticker_symbol):
     try:
-        info, current_price, past_30_days = get_stock_info(ticker_symbol)
+        current_price, past_30_days = get_stock_info(ticker_symbol)
         response = {
-            'info': info,
+            'ticker_symbol': ticker_symbol.upper(),
             'current_price': current_price,
             'past_30_days': past_30_days
         }

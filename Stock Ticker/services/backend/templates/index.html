@@ -1,0 +1,118 @@
+<!-- backend/templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock Ticker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-image: url('/static/images/gradient-stock-market-concept.jpg');
+            background-repeat: no-repeat; /* Optional: Prevents the image from repeating */
+            background-size: cover; /* Optional: Ensures the image covers the entire area */
+            background-position: center; /* Optional: Centers the image */
+            background-attachment: fixed;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stock Price Checker</h1>
+    <input type="text" id="ticker" placeholder="Enter ticker (e.g., AAPL)">
+    <button id="getStockBtn">Get Price</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('getStockBtn').addEventListener('click', async function() {
+            const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+            const resultDiv = document.getElementById('result');
+            
+            console.log('Button clicked, ticker:', ticker);
+            
+            if (!ticker) {
+                resultDiv.innerHTML = '<p style="color: red;">Please enter a ticker symbol</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const url = `/api/stock/${ticker}`;
+                console.log('Fetching from:', url);
+                
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                } else {
+                    // Changed from data.price to data.current_price
+                    resultDiv.innerHTML = `
+                        <h2>${data.ticker_symbol}: $${data.current_price.toFixed(2)}</h2>
+                        <p>Past 30 days data available</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        });
+        
+        document.getElementById('ticker').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                document.getElementById('getStockBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+<!-- In your index.html JavaScript:
+const response = await fetch(`http://localhost:5000/stock/${ticker}`);
+```
+
+The `fetch()` function sends an HTTP request over the network to your backend server.
+
+## The Complete Flow:
+
+1. **Start backend server:** Run `python app.py` (stays running)
+2. **Open frontend:** Open `index.html` in browser
+3. **User enters ticker:** Types "AAPL" and clicks button
+4. **JavaScript makes request:** `fetch('http://localhost:5000/stock/AAPL')`
+5. **Backend receives request:** Flask route handler processes it
+6. **Backend responds:** Sends JSON back with price data
+7. **Frontend displays result:** JavaScript updates the HTML
+
+## Visual Example:
+```
+Browser (index.html)          Backend Server (app.py)
+localhost:8000                localhost:5000
+     │                              │
+     │  HTTP GET /stock/AAPL        │
+     │─────────────────────────────>│
+     │                              │ (yfinance fetches data)
+     │                              │
+     │  JSON: {ticker: AAPL, ...}   │
+     │<─────────────────────────────│
+     │                              │
+   Display                          │
+-->
