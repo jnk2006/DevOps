@@ -92,18 +92,35 @@
                 const data = await response.json();
                 
                 console.log('Data received:', data);
-                
+
+                // Inside the success block where you display results
                 if (data.error) {
                     resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
                 } else {
-                    // Display current price
-                    resultDiv.innerHTML = `<h2>${data.ticker_symbol}: $${data.current_price.toFixed(2)}</h2>`;
-                    
-                    // Show and update chart
-                    if (data.past_30_days && data.past_30_days.length > 0) {
-                        chartContainer.style.display = 'block';
-                        updateChart(data.past_30_days, data.ticker_symbol);
-                    }
+                    let html = `<h2>${data.ticker_symbol}: $${data.current_price.toFixed(2)}</h2>`;
+    
+                // Add analysis if available
+                if (data.analysis) {
+                    const signal = data.analysis.signal;
+                    const signalColor = signal === 'BUY' ? 'green' : signal === 'SELL' ? 'red' : 'orange';
+        
+                    html += `
+                        <div style="margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 5px;">
+                        <h3>Technical Analysis</h3>
+                        <p><strong>7-Day MA:</strong> $${data.analysis.ma_7 ? data.analysis.ma_7.toFixed(2) : 'N/A'}</p>
+                        <p><strong>30-Day MA:</strong> $${data.analysis.ma_30 ? data.analysis.ma_30.toFixed(2) : 'N/A'}</p>
+                        <p><strong>Signal:</strong> <span style="color: ${signalColor}; font-weight: bold;">${signal}</span></p>
+                    </div>
+                `;
+            }
+    
+            resultDiv.innerHTML = html;
+
+                // Show and update chart
+                if (data.past_30_days && data.past_30_days.length > 0) {
+                    chartContainer.style.display = 'block';
+                    updateChart(data.past_30_days, data.ticker_symbol);
+                }
                 }
             } catch (error) {
                 console.error('Fetch error:', error);
