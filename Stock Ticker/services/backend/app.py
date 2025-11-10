@@ -1,5 +1,5 @@
 '''
-Main Application File
+Main Application File - Micro service 1
 This is where:
 
 Initialize web framework (Flask, FastAPI, etc.)
@@ -16,6 +16,8 @@ Route calls function from stock_service.py
 Result flows back to the frontend
 
 This separation keeps your code organized: app.py (setup) -> routes (endpoints) -> services (business logic)
+
+RUN ON PORT 5000
 '''
 
 from flask import Flask, jsonify, render_template
