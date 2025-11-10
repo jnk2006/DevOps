@@ -6,43 +6,77 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            max-width: 900px;
             margin: 50px auto;
             padding: 20px;
             background-image: url('/static/images/gradient-stock-market-concept.jpg');
-            background-repeat: no-repeat; /* Optional: Prevents the image from repeating */
-            background-size: cover; /* Optional: Ensures the image covers the entire area */
-            background-position: center; /* Optional: Centers the image */
+            background-size: cover;
+            background-position: center;
             background-attachment: fixed;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         input {
             padding: 10px;
             font-size: 16px;
             width: 200px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
         }
         button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
         }
         #result {
             margin-top: 20px;
             font-size: 18px;
         }
+        #chartContainer {
+            margin-top: 30px;
+            display: none;
+        }
+        canvas {
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>Stock Price Checker</h1>
-    <input type="text" id="ticker" placeholder="Enter ticker (e.g., AAPL)">
-    <button id="getStockBtn">Get Price</button>
-    <div id="result"></div>
+    <div class="container">
+        <h1>Stock Price Checker</h1>
+        <input type="text" id="ticker" placeholder="Enter ticker (e.g., AAPL)">
+        <button id="getStockBtn">Get Price</button>
+        <div id="result"></div>
+        
+        <div id="chartContainer">
+            <h3>Past 30 Days Price History</h3>
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
 
+    <!-- Include Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
+        let priceChart = null;  // Store chart instance
+        
         document.getElementById('getStockBtn').addEventListener('click', async function() {
             const ticker = document.getElementById('ticker').value.trim().toUpperCase();
             const resultDiv = document.getElementById('result');
-            
-            console.log('Button clicked, ticker:', ticker);
+            const chartContainer = document.getElementById('chartContainer');
             
             if (!ticker) {
                 resultDiv.innerHTML = '<p style="color: red;">Please enter a ticker symbol</p>';
@@ -50,25 +84,26 @@
             }
             
             resultDiv.innerHTML = '<p>Loading...</p>';
+            chartContainer.style.display = 'none';
             
             try {
                 const url = `/api/stock/${ticker}`;
-                console.log('Fetching from:', url);
-                
                 const response = await fetch(url);
-                console.log('Response status:', response.status);
-                
                 const data = await response.json();
+                
                 console.log('Data received:', data);
                 
                 if (data.error) {
                     resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
                 } else {
-                    // Changed from data.price to data.current_price
-                    resultDiv.innerHTML = `
-                        <h2>${data.ticker_symbol}: $${data.current_price.toFixed(2)}</h2>
-                        <p>Past 30 days data available</p>
-                    `;
+                    // Display current price
+                    resultDiv.innerHTML = `<h2>${data.ticker_symbol}: $${data.current_price.toFixed(2)}</h2>`;
+                    
+                    // Show and update chart
+                    if (data.past_30_days && data.past_30_days.length > 0) {
+                        chartContainer.style.display = 'block';
+                        updateChart(data.past_30_days, data.ticker_symbol);
+                    }
                 }
             } catch (error) {
                 console.error('Fetch error:', error);
@@ -76,6 +111,71 @@
             }
         });
         
+        function updateChart(priceData, ticker) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            
+            // Extract dates and prices
+            const dates = priceData.map(item => item.Date);
+            const prices = priceData.map(item => item.Close);
+            
+            // Create new chart
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: `${ticker} Price (USD)`,
+                        data: prices,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Price: $${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Allow Enter key to submit
         document.getElementById('ticker').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 document.getElementById('getStockBtn').click();
