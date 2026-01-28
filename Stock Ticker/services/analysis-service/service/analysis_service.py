@@ -18,6 +18,8 @@ def calculate_moving_averages(ticker, period='3mo'):
         latest = hist.iloc[-1]
         
         result = {
+            'ticker': ticker.upper(),
+            'current_price': float(latest['Close']),
             'ma_7': float(latest['MA7']) if not pd.isna(latest['MA7']) else None,
             'ma_30': float(latest['MA30']) if not pd.isna(latest['MA30']) else None,
             'signal': get_signal(latest['Close'], latest['MA7'], latest['MA30'])
